@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Test mouselock only works in fullscreen</title>
+    <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js">
+    </script>
+    <script type="application/javascript" src="/tests/SimpleTest/EventUtils.js">
+    </script>
+    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+  </head>
+  <body>
+    <div id="div">This is the 'div' div.</div>
+    <pre id="test">
+      <script class="testbody" type="text/javascript">
+      function doTest(){//Tests to make sure that mouse lock can occur in full
+                        //screen mode and that it will only occur in full screen
+                        //mode.
+        var div = document.getElementById('div');
+
+        //Fullscreen is off attempt to mouse lock.
+        var offFS = function(){
+          ok(!navigator.pointer.islocked(),
+            "Screen is locked outside of fullscreen mode.");
+          if(navigator.pointer.islocked()){
+            navigator.pointer.unlock();
+          }
+
+          //Fullscreen is on attempt to mouse lock
+          //(nested here to ensure everything is in correct order)
+          var div = document.getElementById('div');
+          SpecialPowers.setBoolPref
+            ("full-screen-api.allow-trusted-requests-only", false);
+          var handler = function(){
+            var onFS = function(){
+              ok(navigator.pointer.islocked(),
+                "Screen could not be locked whilst in fullscreen.");
+              if(navigator.pointer.islocked()){
+                navigator.pointer.unlock();
+              }
+              SimpleTest.finish();
+              document.removeEventListener('mozfullscreenchange', handler,
+                false);
+              document.mozCancelFullScreen();
+            };
+            navigator.pointer.lock(div, onFS, onFS);
+          };
+          document.addEventListener('mozfullscreenchange', handler, false);
+          div.mozRequestFullScreen();
+        };
+        navigator.pointer.lock(div, offFS, offFS);
+      }
+      document.addEventListener('DOMContentLoaded', doTest, false);
+      SimpleTest.waitForExplicitFinish();
+      </script>
+    </pre>
+  </body>
+</html>
